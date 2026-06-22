@@ -52,20 +52,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       .eq("id", u.id)
       .single();
 
-    setProfile(prof);
+    let currentProfile = prof;
 
-    if (prof?.household_id) {
+    if (!currentProfile) {
+      const displayName =
+        typeof u.user_metadata?.display_name === "string" && u.user_metadata.display_name
+          ? u.user_metadata.display_name
+          : u.email?.split("@")[0] ?? "新朋友";
+
+      const { data: createdProfile } = await supabase
+        .from("profiles")
+        .insert({ id: u.id, display_name: displayName })
+        .select("*")
+        .single();
+
+      currentProfile = createdProfile;
+    }
+
+    setProfile(currentProfile);
+
+    if (currentProfile?.household_id) {
       const { data: hh } = await supabase
         .from("households")
         .select("*")
-        .eq("id", prof.household_id)
+        .eq("id", currentProfile.household_id)
         .single();
       setHousehold(hh);
 
       const { data: mates } = await supabase
         .from("profiles")
         .select("*")
-        .eq("household_id", prof.household_id);
+        .eq("household_id", currentProfile.household_id);
       setRoommates(mates ?? []);
     } else {
       setHousehold(null);
