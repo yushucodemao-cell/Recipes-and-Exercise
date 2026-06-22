@@ -11,6 +11,10 @@ import { generateInviteCode } from "@/lib/utils";
 import { seedHouseholdData } from "@/lib/meal-plan";
 import { Home, Users } from "lucide-react";
 
+type Household = {
+  id: string;
+};
+
 export default function SetupPage() {
   const [mode, setMode] = useState<"choose" | "create" | "join">("choose");
   const [inviteCode, setInviteCode] = useState("");
@@ -32,7 +36,7 @@ export default function SetupPage() {
         household_name: householdName,
         code,
       })
-      .single();
+      .single<Household>();
 
     if (hhError || !household) {
       setError(hhError?.message ?? "创建失败");
