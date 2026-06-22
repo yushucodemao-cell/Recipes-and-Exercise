@@ -28,24 +28,14 @@ export default function SetupPage() {
 
     const code = generateInviteCode();
     const { data: household, error: hhError } = await supabase
-      .from("households")
-      .insert({ name: householdName, invite_code: code })
-      .select()
+      .rpc("create_household_for_current_user", {
+        household_name: householdName,
+        code,
+      })
       .single();
 
     if (hhError || !household) {
       setError(hhError?.message ?? "创建失败");
-      setLoading(false);
-      return;
-    }
-
-    const { error: profError } = await supabase
-      .from("profiles")
-      .update({ household_id: household.id })
-      .eq("id", user.id);
-
-    if (profError) {
-      setError(profError.message);
       setLoading(false);
       return;
     }

@@ -159,6 +159,32 @@ returns setof households as $$
   select * from households where invite_code = upper(code) limit 1;
 $$ language sql security definer;
 
+-- 创建空间并把当前用户加入空间，避免 RLS 在创建空间时卡住
+create or replace function create_household_for_current_user(household_name text, code text)
+returns households as $$
+declare
+  new_household households;
+begin
+  insert into households (name, invite_code)
+  values (coalesce(nullif(household_name, ''), '我们的家'), upper(code))
+  returning * into new_household;
+
+  insert into profiles (id, display_name, household_id)
+  values (
+    auth.uid(),
+    coalesce(
+      nullif(auth.jwt()->'user_metadata'->>'display_name', ''),
+      split_part(coalesce(auth.jwt()->>'email', ''), '@', 1),
+      '新朋友'
+    ),
+    new_household.id
+  )
+  on conflict (id) do update set household_id = excluded.household_id;
+
+  return new_household;
+end;
+$$ language plpgsql security definer;
+
 -- ingredients, recipes: 室友共享
 create policy "ingredients_all" on ingredients for all
   using (household_id = get_my_household_id())
