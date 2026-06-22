@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
+import { getErrorMessage } from "@/lib/errors";
 
 export default function RegisterPage() {
   const [displayName, setDisplayName] = useState("");
@@ -28,7 +29,7 @@ export default function RegisterPage() {
     });
 
     if (authError) {
-      setError(authError.message);
+      setError(getErrorMessage(authError, "注册失败，请稍后重试"));
       setLoading(false);
       return;
     }

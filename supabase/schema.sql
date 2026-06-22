@@ -241,11 +241,23 @@ create policy "exercise_logs_delete" on exercise_logs for delete
 create or replace function handle_new_user()
 returns trigger as $$
 begin
-  insert into profiles (id, display_name)
-  values (new.id, coalesce(new.raw_user_meta_data->>'display_name', split_part(new.email, '@', 1)));
+  insert into public.profiles (id, display_name)
+  values (
+    new.id,
+    coalesce(
+      nullif(new.raw_user_meta_data->>'display_name', ''),
+      split_part(coalesce(new.email, ''), '@', 1),
+      '新朋友'
+    )
+  )
+  on conflict (id) do nothing;
+
   return new;
+exception
+  when others then
+    return new;
 end;
-$$ language plpgsql security definer;
+$$ language plpgsql security definer set search_path = public;
 
 create trigger on_auth_user_created
   after insert on auth.users

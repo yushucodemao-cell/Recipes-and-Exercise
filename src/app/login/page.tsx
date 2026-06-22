@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
+import { getErrorMessage } from "@/lib/errors";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -22,7 +23,7 @@ export default function LoginPage() {
 
     const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
     if (authError) {
-      setError(authError.message);
+      setError(getErrorMessage(authError, "登录失败，请检查邮箱和密码"));
       setLoading(false);
       return;
     }
